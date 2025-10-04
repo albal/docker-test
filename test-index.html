@@ -138,7 +138,8 @@
         // Show namespace card if namespace is set
         const namespaceElement = document.getElementById('namespace');
         const namespaceCard = document.getElementById('namespace-card');
-        if (namespaceElement && namespaceElement.textContent !== '__K8S_NAMESPACE__' && namespaceElement.textContent.trim() !== '') {
+        const namespaceValue = namespaceElement.textContent.trim();
+        if (namespaceElement && namespaceValue !== '__K8S_NAMESPACE__' && namespaceValue !== 'N/A' && namespaceValue !== '') {
             namespaceCard.style.display = 'block';
         }
     </script>
