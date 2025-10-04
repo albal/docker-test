@@ -144,3 +144,84 @@ jobs:
             - **Build Date**: ${{ steps.meta.outputs.date }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Git for gh-pages
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Checkout or Create gh-pages branch
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          # Fetch all branches
+          git fetch origin
+          
+          # Check if gh-pages exists on remote
+          if git ls-remote --heads origin gh-pages | grep gh-pages; then
+            echo "gh-pages branch exists, checking it out"
+            git checkout gh-pages
+            git pull origin gh-pages
+          else
+            echo "gh-pages branch does not exist, creating it"
+            git checkout --orphan gh-pages
+            git rm -rf .
+            
+            # Create initial index.html
+            cat > index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Test App Helm Repository</title>
+              <style>
+                  body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+                  h1 { color: #333; }
+                  code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; }
+                  pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+              </style>
+          </head>
+          <body>
+              <h1>Test App Helm Repository</h1>
+              <p>This is a Helm chart repository for the Test App.</p>
+              
+              <h2>Usage</h2>
+              <pre><code>helm repo add test-app https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+          helm repo update
+          helm search repo test-app
+          helm install my-test-app test-app/test-app</code></pre>
+              
+              <h2>Available Charts</h2>
+              <p>See <a href="index.yaml">index.yaml</a> for available chart versions.</p>
+              
+              <h2>Source</h2>
+              <p>Source code: <a href="https://github.com/${{ github.repository }}">github.com/${{ github.repository }}</a></p>
+          </body>
+          </html>
+          EOF
+            
+            git add index.html
+            git commit -m "Initialize gh-pages branch"
+            git push origin gh-pages
+          fi
+      
+      - name: Update Helm Repository Index
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          # Make sure we're on gh-pages
+          git checkout gh-pages
+          
+          # Copy packaged charts to gh-pages
+          cp -f ../helm-packages/*.tgz . || echo "No charts to copy"
+          
+          # Update or create Helm repository index
+          helm repo index . --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+          
+          echo "Helm repository index updated"
+          cat index.yaml
+      
+      - name: Commit and Push to gh-pages
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          git add .
+          git commit -m "Update Helm repository for version ${{ steps.meta.outputs.version }}" || echo "No changes to commit"
+          git push origin gh-pages
