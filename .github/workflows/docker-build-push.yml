@@ -16,7 +16,6 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKER_IMAGE: your-dockerhub-username/test-app
   DOCKERFILE: Dockerfile.test
   HELM_CHART_PATH: helm/test-app
 
@@ -45,19 +44,23 @@ jobs:
           echo "commit=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           echo "branch=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_OUTPUT
           echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
+
+          # Build image name from username
+          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/test-app"
+          echo "image=${IMAGE_NAME}" >> $GITHUB_OUTPUT
           
           # Determine tags
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
             echo "version=${VERSION}" >> $GITHUB_OUTPUT
-            echo "tags=${{ env.DOCKER_IMAGE }}:${VERSION},${{ env.DOCKER_IMAGE }}:latest" >> $GITHUB_OUTPUT
+            echo "tags=${IMAGE_NAME}:${VERSION},${IMAGE_NAME}:latest" >> $GITHUB_OUTPUT
           elif [[ $GITHUB_REF == refs/heads/main ]] || [[ $GITHUB_REF == refs/heads/master ]]; then
             echo "version=latest" >> $GITHUB_OUTPUT
-            echo "tags=${{ env.DOCKER_IMAGE }}:latest,${{ env.DOCKER_IMAGE }}:$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+            echo "tags=${IMAGE_NAME}:latest,${IMAGE_NAME}:$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           else
             BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | sed 's/[^a-zA-Z0-9._-]/-/g')
             echo "version=${BRANCH_NAME}" >> $GITHUB_OUTPUT
-            echo "tags=${{ env.DOCKER_IMAGE }}:${BRANCH_NAME}" >> $GITHUB_OUTPUT
+            echo "tags=${IMAGE_NAME}:${BRANCH_NAME}" >> $GITHUB_OUTPUT
           fi
       
       - name: Build and push Docker image
@@ -112,7 +115,7 @@ jobs:
           body: |
             ## Docker Image
             ```
-            docker pull ${{ env.DOCKER_IMAGE }}:${{ steps.meta.outputs.version }}
+            docker pull ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.version }}
             ```
             
             ## Helm Installation
