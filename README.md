@@ -114,30 +114,56 @@ docker run -d -p 8888:80 albal/test-app:latest
 
 ## ☸️ Kubernetes Deployment
 
-### Quick Deploy with Helm
+### Install from Helm Repository (Recommended)
+
+The easiest way to install is from the Helm repository hosted on GitHub Pages:
 
 ```bash
-# Install the chart
-./deploy-helm.sh install latest
+# Add the Helm repository
+helm repo add test-app https://albal.github.io/docker-test
+helm repo update
 
-# Check status
-./deploy-helm.sh status
+# Search available versions
+helm search repo test-app
 
-# Port forward to local machine
-./deploy-helm.sh port-forward
+# Install latest version
+helm install my-test-app test-app/test-app
+
+# Install specific version
+helm install my-test-app test-app/test-app --version 1.0.0
+
+# Install in a specific namespace
+helm install my-test-app test-app/test-app -n production --create-namespace
 ```
 
-### Manual Helm Installation
+### Install from Local Chart
 
 ```bash
-# Basic installation
+# Clone the repository
+git clone https://github.com/albal/docker-test.git
+cd docker-test
+
+# Install the chart
 helm install test-app ./helm/test-app
 
-# Production installation
+# Production installation with custom values
 helm install test-app ./helm/test-app \
   -f ./helm/test-app/values-prod.yaml \
   --set image.repository=albal/test-app \
   --set image.tag=v1.0.0
+
+# Or use the deployment script
+./deploy-helm.sh install latest
+```
+
+### Install from GitHub Release
+
+```bash
+# Download chart from release
+wget https://github.com/albal/docker-test/releases/download/v1.0.0/test-app-1.0.0.tgz
+
+# Install from downloaded file
+helm install test-app test-app-1.0.0.tgz
 ```
 
 ### Enable Ingress
