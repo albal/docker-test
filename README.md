@@ -11,6 +11,7 @@ A modern web application that displays git commit information, hostname, and con
 - 🎨 **Random color background** that changes on each page refresh
 - 📝 **Git metadata display** - shows commit hash and branch
 - 🖥️ **Host information** - displays hostname and container ID
+- ☸️ **Kubernetes namespace** - automatically displayed when running in K8s
 - 🐳 **Docker-optimized** - lightweight nginx-alpine base image
 - ☸️ **Kubernetes-ready** - complete Helm chart included
 - 🤖 **CI/CD automated** - GitHub Actions for build and deploy
@@ -236,6 +237,12 @@ The container uses environment variables set during build:
 - `GIT_COMMIT` - Git commit SHA
 - `GIT_BRANCH` - Git branch name
 - `BUILD_DATE` - Build timestamp
+
+### Kubernetes Environment Variables
+
+When running in Kubernetes, the following environment variables are automatically injected:
+
+- `K8S_NAMESPACE` - The Kubernetes namespace where the pod is running (automatically set via fieldRef)
 
 ### Helm Values
 

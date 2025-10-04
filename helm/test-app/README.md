@@ -9,6 +9,7 @@ A Helm chart for deploying the test-app application on Kubernetes.
 - 🔒 **ServiceAccount** management
 - 🌐 **Ingress** support with TLS
 - 📝 **Git metadata** annotations on pods
+- ☸️ **Kubernetes namespace** automatically displayed in the app
 - ⚙️ **Configurable** resources and replicas
 
 ## Prerequisites

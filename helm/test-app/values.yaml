@@ -79,6 +79,8 @@ tolerations: []
 affinity: {}
 
 # Environment variables
+# Note: K8S_NAMESPACE is automatically injected by the deployment template
+# Additional environment variables can be added here
 env: []
   # - name: EXAMPLE_VAR
   #   value: "example-value"
