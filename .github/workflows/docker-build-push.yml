@@ -1,0 +1,133 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
+  release:
+    types: [published]
+  workflow_dispatch:
+
+env:
+  DOCKER_IMAGE: your-dockerhub-username/test-app
+  DOCKERFILE: Dockerfile.test
+  HELM_CHART_PATH: helm/test-app
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Extract Git metadata
+        id: meta
+        run: |
+          echo "commit=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "branch=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_OUTPUT
+          echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_OUTPUT
+          
+          # Determine tags
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
+            echo "tags=${{ env.DOCKER_IMAGE }}:${VERSION},${{ env.DOCKER_IMAGE }}:latest" >> $GITHUB_OUTPUT
+          elif [[ $GITHUB_REF == refs/heads/main ]] || [[ $GITHUB_REF == refs/heads/master ]]; then
+            echo "version=latest" >> $GITHUB_OUTPUT
+            echo "tags=${{ env.DOCKER_IMAGE }}:latest,${{ env.DOCKER_IMAGE }}:$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          else
+            BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | sed 's/[^a-zA-Z0-9._-]/-/g')
+            echo "version=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+            echo "tags=${{ env.DOCKER_IMAGE }}:${BRANCH_NAME}" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ env.DOCKERFILE }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            GIT_COMMIT=${{ steps.meta.outputs.commit }}
+            GIT_BRANCH=${{ steps.meta.outputs.branch }}
+            BUILD_DATE=${{ steps.meta.outputs.date }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+      
+      - name: Image digest
+        run: |
+          echo "Image pushed with tags: ${{ steps.meta.outputs.tags }}"
+      
+      - name: Update Helm Chart on Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          
+          # Update Chart.yaml with new version and appVersion
+          sed -i "s/^version:.*/version: ${VERSION}/" ${HELM_CHART_PATH}/Chart.yaml
+          sed -i "s/^appVersion:.*/appVersion: \"${VERSION}\"/" ${HELM_CHART_PATH}/Chart.yaml
+          
+          echo "Updated Helm chart to version ${VERSION}"
+          cat ${HELM_CHART_PATH}/Chart.yaml
+      
+      - name: Package Helm Chart
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          # Install Helm
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          
+          # Package the chart
+          helm package ${HELM_CHART_PATH} -d ./helm-packages
+          
+          echo "Helm chart packaged successfully"
+          ls -la ./helm-packages/
+      
+      - name: Create GitHub Release with Helm Chart
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ./helm-packages/*.tgz
+          body: |
+            ## Docker Image
+            ```
+            docker pull ${{ env.DOCKER_IMAGE }}:${{ steps.meta.outputs.version }}
+            ```
+            
+            ## Helm Installation
+            ```bash
+            # Add the chart (if using Helm repo)
+            helm install test-app ./helm-packages/test-app-${{ steps.meta.outputs.version }}.tgz
+            
+            # Or install from release assets
+            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/test-app-${{ steps.meta.outputs.version }}.tgz
+            helm install test-app test-app-${{ steps.meta.outputs.version }}.tgz
+            ```
+            
+            ## Git Information
+            - **Commit**: ${{ steps.meta.outputs.commit }}
+            - **Branch**: ${{ steps.meta.outputs.branch }}
+            - **Build Date**: ${{ steps.meta.outputs.date }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

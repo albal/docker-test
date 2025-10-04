@@ -1,0 +1,22 @@
+# Development Environment Values
+replicaCount: 1
+
+image:
+  repository: your-dockerhub-username/test-app
+  tag: latest
+  pullPolicy: Always
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+service:
+  type: NodePort
+  port: 80
+
+ingress:
+  enabled: false

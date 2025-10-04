@@ -1,0 +1,28 @@
+FROM nginx:alpine
+
+# Accept build arguments for git info
+ARG GIT_COMMIT=unknown
+ARG GIT_BRANCH=unknown
+ARG BUILD_DATE=unknown
+
+# Set as environment variables so they're available at runtime
+ENV GIT_COMMIT=${GIT_COMMIT}
+ENV GIT_BRANCH=${GIT_BRANCH}
+ENV BUILD_DATE=${BUILD_DATE}
+
+# Create app directory
+WORKDIR /usr/share/nginx/html
+
+# Copy the HTML and entrypoint files
+COPY test-index.html /usr/share/nginx/html/index.html
+COPY test-entrypoint.sh /entrypoint.sh
+
+# Make entrypoint executable
+RUN chmod +x /entrypoint.sh
+
+# Expose port 80
+EXPOSE 80
+
+# Use custom entrypoint to inject git info
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]

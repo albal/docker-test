@@ -1,0 +1,16 @@
+apiVersion: v2
+name: test-app
+description: A Helm chart for test-app with git info display
+type: application
+version: 0.1.0  # This is the chart version
+appVersion: "1.0.0"  # This is the version of the application being deployed
+keywords:
+  - test
+  - nginx
+  - demo
+home: https://github.com/your-org/k8s-manifests
+sources:
+  - https://github.com/your-org/k8s-manifests
+maintainers:
+  - name: Your Name
+    email: your-email@example.com
