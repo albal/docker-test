@@ -2,8 +2,28 @@ apiVersion: v1
 entries:
   test-app:
   - apiVersion: v2
+    appVersion: 1.2.4
+    created: "2025-10-05T11:24:49.289181955Z"
+    description: A Helm chart for test-app with git info display
+    digest: 9b93a7443c2e182ed9e8ed453a76cf47b4cb9ea3eae9b8125da0a693409ca68d
+    home: https://github.com/your-org/k8s-manifests
+    keywords:
+    - test
+    - nginx
+    - demo
+    maintainers:
+    - email: your-email@example.com
+      name: Your Name
+    name: test-app
+    sources:
+    - https://github.com/your-org/k8s-manifests
+    type: application
+    urls:
+    - https://albal.github.io/docker-test/test-app-1.2.4.tgz
+    version: 1.2.4
+  - apiVersion: v2
     appVersion: 1.2.3
-    created: "2025-10-04T18:37:11.462168647Z"
+    created: "2025-10-05T11:24:49.288763662Z"
     description: A Helm chart for test-app with git info display
     digest: 436a3a3baa6481167facb51ff089579eb91973b6a57d7d0ca78ab59dc4c17eaf
     home: https://github.com/your-org/k8s-manifests
@@ -23,7 +43,7 @@ entries:
     version: 1.2.3
   - apiVersion: v2
     appVersion: 1.1.2
-    created: "2025-10-04T18:37:11.461698043Z"
+    created: "2025-10-05T11:24:49.288322627Z"
     description: A Helm chart for test-app with git info display
     digest: a924cc9ed4cba1462c5d81aae7a3bf8b0ec0fac1031ddaf18e1b1092d97aa533
     home: https://github.com/your-org/k8s-manifests
@@ -41,4 +61,4 @@ entries:
     urls:
     - https://albal.github.io/docker-test/test-app-1.1.2.tgz
     version: 1.1.2
-generated: "2025-10-04T18:37:11.460371449Z"
+generated: "2025-10-05T11:24:49.287671534Z"
